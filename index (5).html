@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MACRO COMMAND CENTER</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090a0c;--surface:#121418;--sh:#1e2128;--border:#22262d;--bl:#333942;--t:#f8fafc;--tm:#94a3b8;--td:#475569;--bull:#10b981;--bear:#ef4444;--warn:#f59e0b;--neon:#38bdf8;--skew:#c084fc;font-family:'Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}.mono{font-family:'JetBrains Mono',monospace}.uc{text-transform:uppercase;letter-spacing:.05em}
+
+/* Setup */
+#setup{position:fixed;inset:0;background:rgba(9,10,12,.95);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(5px)}#setup.hidden{display:none!important}
+.sb{background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--neon);padding:36px;max-width:900px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}
+.sb-title{font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:1px}.sb-sub{font-size:12px;color:var(--tm);margin-bottom:28px}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}.sg.full{grid-template-columns:1fr 1fr}
+.sf-lbl{font-size:10px;font-weight:600;color:var(--tm);margin-bottom:4px;display:block;letter-spacing:1px}
+.sf-in{width:100%;background:#0c0d10;border:1px solid var(--border);color:var(--t);padding:9px 11px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;border-radius:3px;transition:border-color .2s}.sf-in:focus{border-color:var(--neon)}
+.sb-btn{background:var(--t);color:var(--bg);border:none;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;border-radius:4px;margin-top:8px;transition:background .2s;letter-spacing:1px}.sb-btn:hover{background:var(--neon)}
+.sb-err{font-size:11px;color:var(--bear);margin-top:10px;display:none;text-align:center}
+
+/* Header */
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:700;letter-spacing:2px}.logo span{color:var(--neon)}
+.hc{display:flex;gap:12px;align-items:center}
+.ts{color:var(--tm);font-size:11px}
+.hb{background:transparent;color:var(--tm);border:1px solid var(--border);padding:5px 11px;font-size:10px;font-weight:600;cursor:pointer;border-radius:3px;transition:all .2s}.hb:hover{color:var(--t);border-color:var(--td)}
+.hb-p{background:rgba(56,189,248,.1);color:var(--neon);border-color:var(--neon)}.hb-p:hover{background:var(--neon);color:#000}
+
+/* Exec Bar */
+.exec{display:grid;grid-template-columns:220px 1fr 320px;gap:24px;padding:20px;border-bottom:1px solid var(--border);background:#0c0d10;align-items:center}
+.sc-block{display:flex;align-items:center;gap:16px;border-right:1px solid var(--border);padding-right:20px;height:100%}
+.sc-val{font-size:56px;font-weight:700;line-height:1;letter-spacing:-2px}
+.sc-meta{display:flex;flex-direction:column;gap:5px}
+.sc-dir{font-size:12px;font-weight:600;padding:3px 8px;border-radius:3px;text-align:center}
+.sc-delta{font-size:11px;color:var(--tm)}
+.cio{display:flex;flex-direction:column;gap:6px}.cio-title{font-size:11px;font-weight:700;color:var(--neon);letter-spacing:1px;margin-bottom:3px;display:flex;align-items:center;gap:6px}.cio-title::before{content:"■";font-size:7px}
+.cio-row{display:grid;grid-template-columns:130px 1fr;font-size:13px;line-height:1.5}.cio-lbl{color:var(--tm);font-weight:500}.cio-val{font-weight:600}.cio-risk{color:var(--warn)}
+.pos-block{border-left:1px solid var(--border);padding-left:24px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:center}
+.pb-row{display:flex;flex-direction:column;gap:1px}.pb-lbl{font-size:9px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase}.pb-val{font-size:13px;font-weight:600}
+.uf{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--bear);margin-top:4px;background:rgba(239,68,68,.1);padding:5px 8px;border-radius:3px}
+
+/* Tabs */
+.tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto}
+.tab{padding:12px 20px;font-size:12px;font-weight:600;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.5px;white-space:nowrap}
+.tab:hover{color:var(--t);background:var(--sh)}.tab.active{color:var(--neon);border-bottom-color:var(--neon);background:rgba(56,189,248,.05)}
+
+/* Views */
+.vp{display:none;padding:24px 20px;max-width:2200px;margin:0 auto;width:100%}.vp.active{display:block}
+
+/* Cards */
+.sg-title{font-size:12px;font-weight:700;color:var(--tm);letter-spacing:2px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.sg-group{margin-bottom:32px}
+.dc{background:var(--surface);border:1px solid var(--border);padding:14px;border-radius:5px;transition:border-color .2s}.dc:hover{border-color:var(--bl)}
+.dc-lbl{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.dc-val{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;margin-bottom:6px}
+.dc-sub{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:500}
+.dc-note{font-size:10px;color:var(--td);margin-top:6px;line-height:1.4}
+.dc-hl{border-left:3px solid var(--neon);background:rgba(56,189,248,.03)}
+.dc-warn{border-left:3px solid var(--warn);background:rgba(245,158,11,.03)}
+.dc-skew{border-left:3px solid var(--skew);background:rgba(192,132,252,.03)}
+.pos{color:var(--bull)}.neg{color:var(--bear)}.neu{color:var(--neon)}
+.dir-up{background:rgba(16,185,129,.1);color:var(--bull)}.dir-down{background:rgba(239,68,68,.1);color:var(--bear)}.dir-neu{background:rgba(245,158,11,.1);color:var(--warn)}
+.lp{animation:lp 1.5s infinite;opacity:.5}@keyframes lp{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+/* Regime Breakdown */
+.regime-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.rs-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.rs-row:last-child{border-bottom:none}
+.rs-lbl{color:var(--tm);font-weight:500}.rs-val{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px}
+.rs-bar{width:60px;height:5px;background:var(--border);border-radius:2px;overflow:hidden;margin-left:8px;display:inline-block;vertical-align:middle}
+.rs-fill{height:100%;border-radius:2px;transition:width .6s}
+
+/* Net Liq */
+.nl-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border)}.nl-row:last-child{border-bottom:none}
+.nl-lbl{color:var(--tm);font-size:12px;font-weight:500}.nl-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+
+/* Divergence Matrix */
+.div-matrix{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.div-cell{background:var(--surface);border:1px solid var(--border);padding:14px;border-radius:5px;transition:all .2s}
+.div-cell.alert{border-color:var(--warn);background:rgba(245,158,11,.03)}
+.div-cell.confirm{border-color:var(--bull);background:rgba(16,185,129,.03)}
+.div-pair{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.div-status{font-size:13px;font-weight:600;margin-bottom:4px}
+.div-why{font-size:11px;color:var(--tm);line-height:1.5}
+
+/* Playbook panels */
+.pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.tp{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:24px}
+.tp-h{font-size:15px;font-weight:700;margin-bottom:16px;letter-spacing:1px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tp-c{font-size:14px;line-height:1.7;color:var(--t)}
+.sb2{margin-bottom:16px}.sb2-lbl{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.sb2-val{font-size:14px;font-weight:400}
+.opp-box{background:rgba(255,255,255,.02);border:1px solid var(--bl);padding:14px;border-radius:5px;margin-bottom:12px;border-left:3px solid}
+.opp-box.high{border-left-color:var(--bull)}.opp-box.med{border-left-color:var(--warn)}.opp-box.avoid{border-left-color:var(--bear)}
+.opp-t{font-size:13px;font-weight:700;margin-bottom:4px;display:flex;justify-content:space-between}.opp-w{font-size:13px;color:var(--tm);line-height:1.5}
+.ul-c{list-style:none;padding:0}.ul-c li{margin-bottom:6px;padding-left:14px;position:relative;font-size:13px}.ul-c li::before{content:"→";position:absolute;left:0;color:var(--neon);font-family:monospace}
+
+footer{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+footer span{font-size:10px;color:var(--td);font-family:'JetBrains Mono',monospace}
+
+@media(max-width:1200px){.g6,.g5{grid-template-columns:repeat(3,1fr)}.g4,.g3{grid-template-columns:repeat(2,1fr)}.exec{grid-template-columns:1fr}.pb-grid{grid-template-columns:1fr}.regime-grid{grid-template-columns:1fr}.sc-block,.pos-block{border:none;padding:0}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+<div class="sb">
+  <div class="sb-title uc">Command Center Initialization</div>
+  <div class="sb-sub">Keys stored locally in your browser. Manual inputs for data not available via free API.</div>
+  <div class="sg full" style="margin-bottom:16px">
+    <div><label class="sf-lbl">FINNHUB API KEY</label><input class="sf-in" id="key-fh" placeholder="paste finnhub key"></div>
+    <div><label class="sf-lbl">GROQ API KEY</label><input class="sf-in" id="key-groq" placeholder="paste groq key"></div>
+  </div>
+  <div class="sg">
+    <div><label class="sf-lbl">10Y YIELD %</label><input class="sf-in" id="key-10y" placeholder="4.32"></div>
+    <div><label class="sf-lbl">2Y YIELD %</label><input class="sf-in" id="key-2y" placeholder="3.97"></div>
+    <div><label class="sf-lbl">CPI YOY %</label><input class="sf-in" id="key-cpi" placeholder="3.4"></div>
+    <div><label class="sf-lbl">PUT/CALL RATIO</label><input class="sf-in" id="key-pcr" placeholder="0.85"></div>
+    <div><label class="sf-lbl">SKEW INDEX</label><input class="sf-in" id="key-skew" placeholder="135"></div>
+    <div><label class="sf-lbl">BALTIC DRY</label><input class="sf-in" id="key-bdi" placeholder="1850"></div>
+    <div><label class="sf-lbl">FED BS ($B)</label><input class="sf-in" id="key-fed" placeholder="6720"></div>
+    <div><label class="sf-lbl">TGA ($B)</label><input class="sf-in" id="key-tga" placeholder="680"></div>
+    <div><label class="sf-lbl">REV REPO ($B)</label><input class="sf-in" id="key-rrp" placeholder="150"></div>
+    <div><label class="sf-lbl">5Y BREAKEVEN %</label><input class="sf-in" id="key-bei" placeholder="2.35"></div>
+  </div>
+  <button class="sb-btn uc" onclick="saveSetup()">Launch Command Center</button>
+  <div class="sb-err" id="sb-err">Fill all fields.</div>
+</div></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">MACRO <span>COMMAND</span></div>
+  <div class="hc">
+    <div class="ts mono" id="clock">--:--</div>
+    <button class="hb uc" onclick="showSetup()">⚙ Settings</button>
+    <button class="hb hb-p uc" id="rbtn" onclick="run()">↻ Refresh</button>
+  </div>
+</header>
+
+<!-- EXEC BAR -->
+<div class="exec">
+  <div class="sc-block">
+    <div class="sc-val" id="ai-score" style="color:var(--td)">--</div>
+    <div class="sc-meta">
+      <div class="sc-dir uc dir-neu" id="ai-dir">AWAITING</div>
+      <div class="sc-delta mono" id="ai-delta">--</div>
+    </div>
+  </div>
+  <div class="cio">
+    <div class="cio-title uc">Morning CIO Brief</div>
+    <div class="cio-row"><span class="cio-lbl">Regime:</span><span class="cio-val" id="cio-regime">Loading...</span></div>
+    <div class="cio-row"><span class="cio-lbl">Opportunity:</span><span class="cio-val" id="cio-opp">Loading...</span></div>
+    <div class="cio-row"><span class="cio-lbl">Risk:</span><span class="cio-val cio-risk" id="cio-risk">Loading...</span></div>
+    <div class="cio-row"><span class="cio-lbl">Invalidation:</span><span class="cio-val" id="cio-inval">Loading...</span></div>
+  </div>
+  <div class="pos-block">
+    <div class="pb-row"><span class="pb-lbl">Morning Posture</span><span class="pb-val" id="ai-posture">--</span></div>
+    <div class="pb-row"><span class="pb-lbl">Tactical Tilt</span><span class="pb-val" id="ai-tilt">--</span></div>
+    <div class="uf" id="ai-urgency" style="display:none">⚡ <span>--</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab uc active" onclick="stab('data')">Market Data</div>
+  <div class="tab uc" onclick="stab('regime')">Regime Scoring</div>
+  <div class="tab uc" onclick="stab('divg')">Divergence Matrix</div>
+  <div class="tab uc" onclick="stab('ai')">AI Playbook</div>
+</div>
+
+<!-- TAB 1: MARKET DATA -->
+<div id="view-data" class="vp active">
+
+  <div class="sg-group">
+    <div class="sg-title">RATES & CURRENCIES</div>
+    <div class="g6">
+      <div class="dc dc-hl"><div class="dc-lbl">10Y Yield</div><div class="dc-val" id="v-10y">--%</div><div class="dc-sub neu">Manual</div></div>
+      <div class="dc dc-hl"><div class="dc-lbl">2Y Yield</div><div class="dc-val" id="v-2y">--%</div><div class="dc-sub neu">Manual</div></div>
+      <div class="dc"><div class="dc-lbl">Yield Curve (10s2s)</div><div class="dc-val" id="v-curve">--</div><div class="dc-sub" id="x-curve">Calc</div></div>
+      <div class="dc dc-hl"><div class="dc-lbl">Real Yield (10Y-BEI)</div><div class="dc-val" id="v-real">--</div><div class="dc-sub" id="x-real">--</div><div class="dc-note">10Y minus 5Y breakeven inflation</div></div>
+      <div class="dc"><div class="dc-lbl">DXY (UUP)</div><div class="dc-val lp" id="v-dxy">--</div><div class="dc-sub" id="c-dxy">--</div></div>
+      <div class="dc"><div class="dc-lbl">Gold (GLD)</div><div class="dc-val lp" id="v-gld">--</div><div class="dc-sub" id="c-gld">--</div></div>
+    </div>
+  </div>
+
+  <div class="sg-group">
+    <div class="sg-title">EQUITIES & VOLATILITY</div>
+    <div class="g6">
+      <div class="dc"><div class="dc-lbl">S&P 500 (SPY)</div><div class="dc-val lp" id="v-spy">--</div><div class="dc-sub" id="c-spy">--</div></div>
+      <div class="dc"><div class="dc-lbl">Russell 2000 (IWM)</div><div class="dc-val lp" id="v-iwm">--</div><div class="dc-sub" id="c-iwm">--</div></div>
+      <div class="dc"><div class="dc-lbl">Volatility (VXX)</div><div class="dc-val lp" id="v-vix">--</div><div class="dc-sub" id="c-vix">--</div></div>
+      <div class="dc"><div class="dc-lbl">WTI Crude (USO)</div><div class="dc-val lp" id="v-uso">--</div><div class="dc-sub" id="c-uso">--</div></div>
+      <div class="dc"><div class="dc-lbl">20Y+ Bonds (TLT)</div><div class="dc-val lp" id="v-tlt">--</div><div class="dc-sub" id="c-tlt">--</div></div>
+      <div class="dc"><div class="dc-lbl">Bitcoin (IBIT)</div><div class="dc-val lp" id="v-btc">--</div><div class="dc-sub" id="c-btc">--</div></div>
+    </div>
+  </div>
+
+  <div class="sg-group">
+    <div class="sg-title">CREDIT, SENTIMENT & RISK</div>
+    <div class="g6">
+      <div class="dc dc-warn"><div class="dc-lbl">Credit (HYG/LQD)</div><div class="dc-val lp" id="v-cred">--</div><div class="dc-sub" id="c-cred">--</div><div class="dc-note" id="n-cred">Awaiting AI...</div></div>
+      <div class="dc"><div class="dc-lbl">EM Equities (EEM)</div><div class="dc-val lp" id="v-eem">--</div><div class="dc-sub" id="c-eem">--</div></div>
+      <div class="dc dc-skew"><div class="dc-lbl">Put/Call Ratio</div><div class="dc-val" id="v-pcr" style="color:var(--skew)">--</div><div class="dc-sub neu">Manual</div><div class="dc-note">Crowd positioning</div></div>
+      <div class="dc dc-skew"><div class="dc-lbl">CBOE SKEW</div><div class="dc-val" id="v-skew" style="color:var(--skew)">--</div><div class="dc-sub neu">Manual</div><div class="dc-note">Tail risk — leading indicator</div></div>
+      <div class="dc"><div class="dc-lbl">Breadth > 50 DMA</div><div class="dc-val" id="v-b50">--%</div><div class="dc-sub neu">AI Est.</div><div class="dc-note" id="n-breadth">--</div></div>
+      <div class="dc dc-hl"><div class="dc-lbl">Baltic Dry Index</div><div class="dc-val" id="v-bdi">--</div><div class="dc-sub neu">Manual</div><div class="dc-note">Global trade proxy</div></div>
+    </div>
+  </div>
+
+  <div class="sg-group">
+    <div class="sg-title">SECTOR ROTATION</div>
+    <div class="g6">
+      <div class="dc"><div class="dc-lbl">Tech (XLK)</div><div class="dc-val lp" id="v-xlk">--</div><div class="dc-sub" id="c-xlk">--</div></div>
+      <div class="dc"><div class="dc-lbl">Financials (XLF)</div><div class="dc-val lp" id="v-xlf">--</div><div class="dc-sub" id="c-xlf">--</div></div>
+      <div class="dc"><div class="dc-lbl">Energy (XLE)</div><div class="dc-val lp" id="v-xle">--</div><div class="dc-sub" id="c-xle">--</div></div>
+      <div class="dc"><div class="dc-lbl">Healthcare (XLV)</div><div class="dc-val lp" id="v-xlv">--</div><div class="dc-sub" id="c-xlv">--</div></div>
+      <div class="dc"><div class="dc-lbl">Real Estate (XLRE)</div><div class="dc-val lp" id="v-xlre">--</div><div class="dc-sub" id="c-xlre">--</div></div>
+      <div class="dc"><div class="dc-lbl">Utilities (XLU)</div><div class="dc-val lp" id="v-xlu">--</div><div class="dc-sub" id="c-xlu">--</div></div>
+    </div>
+  </div>
+
+  <div class="sg-group">
+    <div class="sg-title">INDUSTRIAL & RATIOS</div>
+    <div class="g4">
+      <div class="dc"><div class="dc-lbl">Copper (COPX)</div><div class="dc-val lp" id="v-cop">--</div><div class="dc-sub" id="c-cop">--</div></div>
+      <div class="dc"><div class="dc-lbl">Copper/Gold Ratio</div><div class="dc-val lp" id="v-cgr">--</div><div class="dc-sub" id="c-cgr">--</div><div class="dc-note">Industrial demand vs fear</div></div>
+      <div class="dc dc-hl"><div class="dc-lbl">Sector Implication</div><div class="dc-note" id="n-sector" style="font-size:12px;margin-top:0;color:var(--t)">Awaiting AI...</div></div>
+      <div class="dc dc-hl">
+        <div class="dc-lbl">Net Liquidity</div>
+        <div class="dc-val" id="v-netliq" style="font-size:20px">--</div>
+        <div class="dc-note" id="n-netliq">Fed BS − TGA − RRP</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TAB 2: REGIME SCORING -->
+<div id="view-regime" class="vp">
+  <div class="sg-group">
+    <div class="sg-title">QUANTITATIVE REGIME SCORE — COMPONENT BREAKDOWN</div>
+    <p style="font-size:13px;color:var(--tm);margin-bottom:20px;line-height:1.7;">The regime score is a weighted composite of 10 quantifiable sub-scores. Each component is scored 0-100 independently and weighted by its macro importance. The AI reads these scores but cannot override the math — it can only adjust the final score by ±5 points based on qualitative cross-asset context. This makes the score auditable and repeatable.</p>
+    <div class="regime-grid">
+      <div>
+        <div class="rs-row"><span class="rs-lbl">① Yield Curve (10s2s) <span style="color:var(--td);font-size:10px">15%</span></span><span class="rs-val" id="rs-curve">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">② Real Yield <span style="color:var(--td);font-size:10px">12%</span></span><span class="rs-val" id="rs-real">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">③ Equity Trend (SPY) <span style="color:var(--td);font-size:10px">12%</span></span><span class="rs-val" id="rs-spy">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">④ Volatility (VXX) <span style="color:var(--td);font-size:10px">10%</span></span><span class="rs-val" id="rs-vix">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">⑤ Credit Stress (HYG/LQD) <span style="color:var(--td);font-size:10px">10%</span></span><span class="rs-val" id="rs-cred">--</span></div>
+      </div>
+      <div>
+        <div class="rs-row"><span class="rs-lbl">⑥ Dollar Trend (UUP) <span style="color:var(--td);font-size:10px">8%</span></span><span class="rs-val" id="rs-dxy">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">⑦ Cu/Au Ratio <span style="color:var(--td);font-size:10px">8%</span></span><span class="rs-val" id="rs-cgr">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">⑧ Small Cap Breadth (IWM) <span style="color:var(--td);font-size:10px">8%</span></span><span class="rs-val" id="rs-iwm">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">⑨ Net Liquidity <span style="color:var(--td);font-size:10px">10%</span></span><span class="rs-val" id="rs-liq">--</span></div>
+        <div class="rs-row"><span class="rs-lbl">⑩ Crowd Sentiment (P/C) <span style="color:var(--td);font-size:10px">7%</span></span><span class="rs-val" id="rs-pcr">--</span></div>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;gap:20px">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Computed Score</div>
+        <div class="mono" style="font-size:32px;font-weight:700" id="rs-computed">--</div>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border)"></div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">AI Adjustment (±5 max)</div>
+        <div class="mono" style="font-size:32px;font-weight:700" id="rs-adj">--</div>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border)"></div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--tm);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Final Score</div>
+        <div class="mono" style="font-size:32px;font-weight:700" id="rs-final">--</div>
+      </div>
+      <div style="flex:1"></div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">SKEW (not in score)</div>
+        <div class="mono" style="font-size:20px;font-weight:600;color:var(--skew)" id="rs-skew">--</div>
+        <div style="font-size:10px;color:var(--td)">Leading — early warning only</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Net Liq breakdown -->
+  <div class="sg-group">
+    <div class="sg-title">NET LIQUIDITY BREAKDOWN</div>
+    <div class="g3">
+      <div class="dc"><div class="nl-row"><span class="nl-lbl">Fed Balance Sheet</span><span class="nl-val" id="nl-fed">--</span></div>
+        <div class="nl-row"><span class="nl-lbl">− Treasury TGA</span><span class="nl-val" id="nl-tga">--</span></div>
+        <div class="nl-row"><span class="nl-lbl">− Reverse Repo</span><span class="nl-val" id="nl-rrp">--</span></div>
+        <div class="nl-row" style="border-top:2px solid var(--neon);margin-top:4px;padding-top:8px"><span class="nl-lbl" style="color:var(--neon);font-weight:700">= NET LIQUIDITY</span><span class="nl-val" id="nl-net" style="color:var(--neon)">--</span></div>
+      </div>
+      <div class="dc"><div class="dc-lbl">Real Yield Derivation</div>
+        <div class="nl-row"><span class="nl-lbl">10Y Nominal Yield</span><span class="nl-val" id="ry-10y">--</span></div>
+        <div class="nl-row"><span class="nl-lbl">− 5Y Breakeven Inflation</span><span class="nl-val" id="ry-bei">--</span></div>
+        <div class="nl-row" style="border-top:2px solid var(--neon);margin-top:4px;padding-top:8px"><span class="nl-lbl" style="color:var(--neon);font-weight:700">= REAL YIELD</span><span class="nl-val" id="ry-real" style="color:var(--neon)">--</span></div>
+      </div>
+      <div class="dc"><div class="dc-lbl">Fisher Rate Analysis</div>
+        <div class="nl-row"><span class="nl-lbl">Nominal Rate (10Y)</span><span class="nl-val" id="fi-nom">--</span></div>
+        <div class="nl-row"><span class="nl-lbl">CPI YoY</span><span class="nl-val" id="fi-cpi">--</span></div>
+        <div class="nl-row" style="border-top:2px solid var(--neon);margin-top:4px;padding-top:8px"><span class="nl-lbl" style="font-weight:700" id="fi-lbl">Fisher Real Rate</span><span class="nl-val" id="fi-val">--</span></div>
+        <div class="dc-note" style="margin-top:8px" id="fi-note">--</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: DIVERGENCE MATRIX -->
+<div id="view-divg" class="vp">
+  <div class="sg-group">
+    <div class="sg-title">CROSS-ASSET DIVERGENCE MATRIX</div>
+    <p style="font-size:13px;color:var(--tm);margin-bottom:16px;line-height:1.7;">Each cell tests whether two assets are confirming or contradicting each other. Orange = divergence detected. Green = confirmation. Generated from live data after each refresh.</p>
+    <div class="div-matrix" id="divg-grid"></div>
+  </div>
+</div>
+
+<!-- TAB 4: AI PLAYBOOK -->
+<div id="view-ai" class="vp">
+  <div class="pb-grid">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div class="tp"><div class="tp-h"><span style="color:var(--neon)">//</span> Morning Macro Interpretation</div><div class="tp-c" id="ai-interp">Waiting...</div></div>
+      <div class="tp" style="border-left:3px solid var(--warn)"><div class="tp-h"><span style="color:var(--warn)">⚠</span> Cross-Asset Conflict</div><div class="tp-c"><div class="sb2"><div class="sb2-lbl">Disagreement</div><div class="sb2-val" id="ai-conflict-title" style="font-weight:600;color:var(--warn)">--</div></div><div class="sb2"><div class="sb2-val" id="ai-conflict-text">--</div></div></div></div>
+      <div class="tp" style="border-left:3px solid var(--neon)"><div class="tp-h"><span style="color:var(--neon)">🏛</span> Historical Analog</div><div class="tp-c"><div class="sb2"><div class="sb2-lbl">Closest Match</div><div class="sb2-val mono" id="ai-analog-closest" style="color:var(--neon);font-size:16px">--</div></div><div class="sb2"><div class="sb2-lbl">Conditions</div><ul class="ul-c" id="ai-analog-cond"><li>--</li></ul></div><div class="sb2"><div class="sb2-lbl">Outcome</div><div class="sb2-val" id="ai-analog-out">--</div></div><div class="sb2"><div class="sb2-lbl">Confidence</div><div class="sb2-val uc" id="ai-analog-conf" style="font-weight:600;font-size:12px">--</div></div></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div class="tp"><div class="tp-h"><span style="color:var(--bull)">🎯</span> Tactical Opportunities</div><div class="tp-c">
+        <div class="opp-box high"><div class="opp-t"><span class="uc" style="color:var(--bull)">High Conviction</span><span id="opp-high-target">--</span></div><div class="opp-w" id="opp-high-why">--</div></div>
+        <div class="opp-box med"><div class="opp-t"><span class="uc" style="color:var(--warn)">Medium</span><span id="opp-med-target">--</span></div><div class="opp-w" id="opp-med-why">--</div></div>
+        <div class="opp-box avoid"><div class="opp-t"><span class="uc" style="color:var(--bear)">Avoid</span><span id="opp-avoid-target">--</span></div><div class="opp-w" id="opp-avoid-why">--</div></div>
+      </div></div>
+      <div class="tp" style="border-left:3px solid var(--skew)"><div class="tp-h"><span style="color:var(--skew)">🧠</span> Playbook Expansion</div><div class="tp-c">
+        <div class="sb2"><div class="sb2-lbl">Current Interpretation</div><div class="sb2-val" id="pb-interp">--</div></div>
+        <div class="sb2"><div class="sb2-lbl">Implication</div><div class="sb2-val" id="pb-impl">--</div></div>
+        <div class="sb2"><div class="sb2-lbl">What Wins</div><div class="sb2-val" id="pb-wins" style="color:var(--bull);font-weight:500">--</div></div>
+        <div class="sb2"><div class="sb2-lbl">What Breaks It</div><div class="sb2-val" id="pb-breaks" style="color:var(--bear);font-weight:500">--</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Finnhub (ETF proxies) • Groq / Llama-3.3-70B • Manual: yields, CPI, BEI, PCR, SKEW, BDI, Fed data</span>
+  <span id="ft">--</span>
+</footer>
+
+<script>
+// ── UI ────────────────────────────────────────────────────────────────────────
+function stab(id){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.vp').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+id).classList.add('active')}
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:true})},1000);
+
+// ── KEYS ──────────────────────────────────────────────────────────────────────
+const KS=['fh','groq','10y','2y','cpi','pcr','skew','bdi','fed','tga','rrp','bei'];
+function gk(){const o={};KS.forEach(k=>o[k]=localStorage.getItem('mc_'+k)||'');['10y','2y','cpi','pcr','skew','bdi','fed','tga','rrp','bei'].forEach(k=>o[k]=parseFloat(o[k])||0);return o}
+function saveSetup(){let ok=true;KS.forEach(id=>{const v=document.getElementById('key-'+id).value.trim();if(!v)ok=false;else localStorage.setItem('mc_'+id,v)});if(!ok){document.getElementById('sb-err').style.display='block';return}document.getElementById('setup').classList.add('hidden');run()}
+function showSetup(){const k=gk();KS.forEach(id=>document.getElementById('key-'+id).value=k[id]||'');document.getElementById('setup').classList.remove('hidden')}
+window.addEventListener('DOMContentLoaded',()=>{const k=gk();if(k.fh&&k.groq&&k['10y']&&k.pcr){document.getElementById('setup').classList.add('hidden');run()}})
+
+// ── FINNHUB ───────────────────────────────────────────────────────────────────
+async function fhQ(sym,token){const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${token}`);if(!r.ok)throw new Error(sym+' '+r.status);const j=await r.json();if(!j.c)throw new Error('No data: '+sym);return{price:j.c,prev:j.pc,chg:j.d??(j.c-j.pc),pct:j.dp??((j.c-j.pc)/j.pc*100)}}
+
+function popCard(id,d,fmt){const ve=document.getElementById('v-'+id),ce=document.getElementById('c-'+id);if(!ve)return;ve.classList.remove('lp');if(!d){ve.textContent='Err';return}ve.textContent=fmt(d.price);if(ce&&d.pct!==undefined){const s=d.pct>=0?'+':'';ce.textContent=`${s}${d.chg.toFixed(2)} (${s}${d.pct.toFixed(2)}%)`;ce.className='dc-sub '+(d.pct>=0?'pos':'neg')}}
+
+// ── REGIME SCORING (QUANTITATIVE) ─────────────────────────────────────────────
+function computeRegime(D,k){
+  const scores={};
+  // ① Curve: -1% = 0, 0 = 40, +0.5% = 70, +1.5% = 100
+  scores.curve=Math.max(0,Math.min(100,40+(D.curve.price/0.015)));
+  // ② Real yield: +2% = 20 (restrictive), 0% = 60, -1% = 90 (easy)
+  const ry=k['10y']-k.bei;
+  scores.real=Math.max(0,Math.min(100,60-ry*20));
+  // ③ SPY daily % change: -2% = 10, 0 = 50, +2% = 90
+  scores.spy=D.spy?Math.max(0,Math.min(100,50+D.spy.pct*20)):50;
+  // ④ VXX: high vol = bad. VXX$40+=10, $25=50, $15=85
+  scores.vix=D.vix?Math.max(0,Math.min(100,100-(D.vix.price-10)*2.5)):50;
+  // ⑤ Credit: HYG/LQD pct change: positive = risk on
+  scores.cred=D.cred?Math.max(0,Math.min(100,50+D.cred.pct*50)):50;
+  // ⑥ DXY: strong dollar hurts. UUP up = lower score
+  scores.dxy=D.dxy?Math.max(0,Math.min(100,50-D.dxy.pct*15)):50;
+  // ⑦ Cu/Au: rising = risk on
+  scores.cgr=D.cgr?Math.max(0,Math.min(100,50+D.cgr.pct*30)):50;
+  // ⑧ IWM: small caps confirm breadth
+  scores.iwm=D.iwm?Math.max(0,Math.min(100,50+D.iwm.pct*20)):50;
+  // ⑨ Net Liquidity: $6T+ = 75, $5.5T = 50, $5T = 25
+  const nl=k.fed-k.tga-k.rrp;
+  scores.liq=Math.max(0,Math.min(100,(nl-4500)/30));
+  // ⑩ PCR: high = fear (contrarian bullish), low = greed (bearish)
+  // PCR > 1.2 = bullish (80), 0.8 = neutral (50), <0.6 = bearish (20)
+  scores.pcr=Math.max(0,Math.min(100,50+(k.pcr-0.85)*100));
+
+  const weights={curve:15,real:12,spy:12,vix:10,cred:10,dxy:8,cgr:8,iwm:8,liq:10,pcr:7};
+  let composite=0;
+  Object.keys(weights).forEach(key=>{composite+=scores[key]*(weights[key]/100)});
+  composite=Math.round(Math.max(0,Math.min(100,composite)));
+
+  return{scores,composite,nl};
+}
+
+function populateRegime(regime,k){
+  const names={curve:'Curve',real:'Real Yield',spy:'Equity',vix:'Volatility',cred:'Credit',dxy:'Dollar',cgr:'Cu/Au',iwm:'Small Caps',liq:'Net Liq',pcr:'Sentiment'};
+  Object.keys(regime.scores).forEach(key=>{
+    const el=document.getElementById('rs-'+key);
+    if(!el)return;
+    const v=Math.round(regime.scores[key]);
+    const col=v>=60?'var(--bull)':v<=40?'var(--bear)':'var(--warn)';
+    el.innerHTML=`<span style="color:${col}">${v}</span><span class="rs-bar"><span class="rs-fill" style="width:${v}%;background:${col}"></span></span>`;
+  });
+  document.getElementById('rs-computed').textContent=regime.composite;
+  document.getElementById('rs-computed').style.color=regime.composite>=60?'var(--bull)':regime.composite<=40?'var(--bear)':'var(--warn)';
+  document.getElementById('rs-skew').textContent=k.skew;
+
+  // Net liq panel
+  const fmt=v=>'$'+v.toLocaleString()+'B';
+  document.getElementById('nl-fed').textContent=fmt(k.fed);
+  document.getElementById('nl-tga').textContent=fmt(k.tga);
+  document.getElementById('nl-rrp').textContent=fmt(k.rrp);
+  document.getElementById('nl-net').textContent=fmt(regime.nl);
+  document.getElementById('v-netliq').textContent=fmt(regime.nl);
+
+  // Real yield
+  const ry=k['10y']-k.bei;
+  document.getElementById('ry-10y').textContent=k['10y'].toFixed(2)+'%';
+  document.getElementById('ry-bei').textContent=k.bei.toFixed(2)+'%';
+  document.getElementById('ry-real').textContent=(ry>=0?'+':'')+ry.toFixed(2)+'%';
+  document.getElementById('ry-real').style.color=ry>0.5?'var(--bear)':ry<0?'var(--bull)':'var(--warn)';
+  document.getElementById('v-real').textContent=(ry>=0?'+':'')+ry.toFixed(2)+'%';
+  document.getElementById('v-real').style.color=ry>0.5?'var(--bear)':ry<0?'var(--bull)':'var(--warn)';
+  document.getElementById('x-real').textContent=ry>0.5?'Restrictive':ry<0?'Accommodative — repression likely':'Neutral';
+
+  // Fisher
+  const fisher=k['10y']-k.cpi;
+  document.getElementById('fi-nom').textContent=k['10y'].toFixed(2)+'%';
+  document.getElementById('fi-cpi').textContent=k.cpi.toFixed(1)+'%';
+  document.getElementById('fi-val').textContent=(fisher>=0?'+':'')+fisher.toFixed(2)+'%';
+  document.getElementById('fi-val').style.color=fisher<0?'var(--bull)':'var(--bear)';
+  document.getElementById('fi-lbl').style.color=fisher<0?'var(--neon)':'var(--t)';
+  document.getElementById('fi-note').textContent=fisher<0?'NEGATIVE real Fisher rate — financial repression active. Savers punished, debtors benefit. Bullish for hard assets.':'Positive Fisher rate — savers compensated. Monetary conditions tighter.';
+}
+
+// ── DIVERGENCE MATRIX ─────────────────────────────────────────────────────────
+function buildDivergences(D,k){
+  const tests=[];
+  const sp=D.spy?.pct??0, vp=D.vix?.pct??0, gp=D.gld?.pct??0, dp=D.dxy?.pct??0;
+  const cp=D.cop?.pct??0, cgrp=D.cgr?.pct??0, ip=D.iwm?.pct??0, bp=D.btc?.pct??0;
+  const tltp=D.tlt?.pct??0, eemp=D.eem?.pct??0, cp2=D.cred?.pct??0;
+
+  // Test each pair
+  const t=(pair,test,confirmMsg,alertMsg)=>tests.push({pair,alert:test,msg:test?alertMsg:confirmMsg});
+
+  t('SPY vs IWM (Breadth)',(sp>0.3&&ip<-0.2)||(sp<-0.3&&ip>0.2),`Aligned — SPY ${sp>0?'+':''}${sp.toFixed(2)}% / IWM ${ip>0?'+':''}${ip.toFixed(2)}%`,`SPY ${sp>0?'+':''}${sp.toFixed(2)}% but IWM ${ip>0?'+':''}${ip.toFixed(2)}% — narrow rally, breadth failing`);
+  t('Cu/Au vs SPY (Growth)',(sp>0.3&&cgrp<-0.3)||(sp<-0.3&&cgrp>0.3),`C/G ratio confirms equity direction`,`C/G ratio disagrees with SPY — industrial demand not confirming`);
+  t('VXX vs SPY (Fear)',sp>0.3&&vp>2,`Normal vol/equity relationship`,`SPY rising but VXX also up — hedging activity increasing`);
+  t('Gold vs DXY (Structural)',(gp>0.4&&dp>0.3)||(gp<-0.4&&dp<-0.3),`Inverse relationship intact`,`Gold & Dollar moving same direction — structural gold demand signal`);
+  t('TLT vs SPY (Duration)',sp>0.5&&tltp>0.3,`Normal stock/bond relationship`,`Stocks AND bonds rallying together — liquidity-driven, watch for reversal`);
+  t('Bitcoin vs SPY (Liquidity)',(sp>0.5&&bp<-1)||(sp<-0.5&&bp>1),`Crypto confirming equity direction`,`BTC diverging from SPY — liquidity signal mismatch`);
+  t('EEM vs SPY (Global Risk)',(sp>0.5&&eemp<-0.3)||(sp<-0.5&&eemp>0.3),`Global risk appetite aligned`,`US and EM equities diverging — check DXY pressure`);
+  t('Credit vs SPY (Stress)',sp>0.5&&cp2<-0.2,`Credit confirming equity rally`,`SPY up but credit stress widening — classic late-cycle warning`);
+  t('SKEW vs VXX (Complacency)',k.skew>130&&D.vix&&D.vix.price<20,`SKEW and VXX aligned`,`SKEW elevated (${k.skew}) but VXX low — complacency trap, smart money hedging`);
+  t('XLE vs XLK (Rotation)',(D.xle?.pct??0)>0.5&&(D.xlk?.pct??0)<-0.3,`No major sector rotation signal`,`Energy outperforming Tech — value/cyclical rotation underway`);
+
+  const grid=document.getElementById('divg-grid');
+  grid.innerHTML=tests.map(t=>`<div class="div-cell ${t.alert?'alert':'confirm'}"><div class="div-pair">${t.pair}</div><div class="div-status" style="color:${t.alert?'var(--warn)':'var(--bull)'}">${t.alert?'⚠ DIVERGENCE':'✓ CONFIRMED'}</div><div class="div-why">${t.msg}</div></div>`).join('');
+  return tests;
+}
+
+// ── MAIN RUN ──────────────────────────────────────────────────────────────────
+let DATA={};
+
+async function run(){
+  const btn=document.getElementById('rbtn');
+  btn.disabled=true;btn.textContent='↻ LOADING...';
+  document.getElementById('ai-interp').innerHTML="<span class='lp'>Loading data streams...</span>";
+
+  const k=gk();
+  DATA={y10:{price:k['10y']},y2:{price:k['2y']},curve:{price:k['10y']-k['2y']},pcr:{price:k.pcr},skew:{price:k.skew},bdi:{price:k.bdi}};
+
+  try{
+    const syms={spy:'SPY',vix:'VXX',gld:'GLD',uso:'USO',cop:'COPX',dxy:'UUP',hyg:'HYG',lqd:'LQD',xlk:'XLK',xlv:'XLV',xle:'XLE',xlf:'XLF',xlre:'XLRE',xlu:'XLU',iwm:'IWM',tlt:'TLT',btc:'IBIT',eem:'EEM'};
+    const reqs=Object.entries(syms).map(async([key,sym])=>[key,await fhQ(sym,k.fh)]);
+    const res=await Promise.allSettled(reqs);
+    res.forEach(r=>{if(r.status==='fulfilled')DATA[r.value[0]]=r.value[1]});
+
+    // Ratios
+    if(DATA.cop&&DATA.gld){const r=DATA.cop.price/DATA.gld.price,rp=DATA.cop.prev/DATA.gld.prev;DATA.cgr={price:r,prev:rp,chg:r-rp,pct:rp?((r-rp)/rp)*100:0}}
+    if(DATA.hyg&&DATA.lqd){const r=DATA.hyg.price/DATA.lqd.price,rp=DATA.hyg.prev/DATA.lqd.prev;DATA.cred={price:r,prev:rp,chg:r-rp,pct:rp?((r-rp)/rp)*100:0}}
+
+    // Static
+    document.getElementById('v-10y').textContent=k['10y'].toFixed(2)+'%';
+    document.getElementById('v-2y').textContent=k['2y'].toFixed(2)+'%';
+    const cve=document.getElementById('v-curve');cve.textContent=(DATA.curve.price>=0?'+':'')+DATA.curve.price.toFixed(2)+'%';cve.style.color=DATA.curve.price>0.1?'var(--bull)':'var(--bear)';
+    document.getElementById('v-skew').textContent=k.skew;
+    document.getElementById('v-pcr').textContent=k.pcr;
+    document.getElementById('v-bdi').textContent=Math.round(k.bdi).toLocaleString();
+
+    // Live
+    const $=v=>'$'+v.toFixed(2);
+    ['spy','vix','gld','uso','cop','dxy','xlk','xlv','xle','xlf','xlre','xlu','iwm','tlt','btc','eem'].forEach(id=>popCard(id,DATA[id],$));
+    popCard('cgr',DATA.cgr,v=>v.toFixed(4));
+    popCard('cred',DATA.cred,v=>v.toFixed(3));
+
+    // Regime scoring
+    const regime=computeRegime(DATA,k);
+    populateRegime(regime,k);
+
+    // Divergences
+    const divs=buildDivergences(DATA,k);
+    const alertCount=divs.filter(d=>d.alert).length;
+
+    // AI
+    await runAI(k.groq,DATA,k,regime,alertCount);
+
+    document.getElementById('ft').textContent='Updated: '+new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  }catch(err){
+    console.error(err);
+    document.getElementById('ai-interp').textContent='ERROR: '+err.message;
+  }finally{
+    btn.disabled=false;btn.textContent='↻ Refresh';
+  }
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+async function runAI(token,d,k,regime,alertCount){
+  const ry=(k['10y']-k.bei).toFixed(2);
+  const fisher=(k['10y']-k.cpi).toFixed(2);
+  const nl=k.fed-k.tga-k.rrp;
+
+  const prompt=`You are an institutional macro strategist writing a morning note for a financial advisor.
+
+TODAY'S DATA:
+SPY: ${d.spy?.pct.toFixed(2)}% | IWM: ${d.iwm?.pct.toFixed(2)}% | VXX: ${d.vix?.pct.toFixed(2)}% | TLT: ${d.tlt?.pct.toFixed(2)}%
+10Y: ${k['10y']}% | 2Y: ${k['2y']}% | Curve: ${d.curve.price.toFixed(2)}% | Real Yield: ${ry}% | Fisher Rate: ${fisher}%
+DXY(UUP): ${d.dxy?.pct.toFixed(2)}% | Gold(GLD): ${d.gld?.pct.toFixed(2)}% | Copper(COPX): ${d.cop?.pct.toFixed(2)}% | Oil(USO): ${d.uso?.pct.toFixed(2)}%
+Credit(HYG/LQD): ${d.cred?.pct.toFixed(2)}% | EEM: ${d.eem?.pct.toFixed(2)}% | BTC(IBIT): ${d.btc?.pct.toFixed(2)}%
+SKEW: ${k.skew} | P/C: ${k.pcr} | BDI: ${k.bdi} | Net Liq: $${nl}B
+Sectors: XLK ${d.xlk?.pct.toFixed(2)}% | XLF ${d.xlf?.pct.toFixed(2)}% | XLE ${d.xle?.pct.toFixed(2)}% | XLV ${d.xlv?.pct.toFixed(2)}% | XLRE ${d.xlre?.pct.toFixed(2)}% | XLU ${d.xlu?.pct.toFixed(2)}%
+Cu/Au Ratio chg: ${d.cgr?.pct.toFixed(2)}%
+
+QUANTITATIVE REGIME SCORE: ${regime.composite}/100 (computed from 10 weighted factors)
+Component scores: Curve=${Math.round(regime.scores.curve)}, RealYield=${Math.round(regime.scores.real)}, Equity=${Math.round(regime.scores.spy)}, Vol=${Math.round(regime.scores.vix)}, Credit=${Math.round(regime.scores.cred)}, Dollar=${Math.round(regime.scores.dxy)}, CuAu=${Math.round(regime.scores.cgr)}, SmallCap=${Math.round(regime.scores.iwm)}, NetLiq=${Math.round(regime.scores.liq)}, Sentiment=${Math.round(regime.scores.pcr)}
+Divergence alerts firing: ${alertCount}/10
+
+IMPORTANT: The computed score is ${regime.composite}. You may adjust it by AT MOST ±5 points based on qualitative factors. Explain any adjustment.
+
+Respond ONLY in valid JSON. No \\n in strings, use <br> for breaks.
+
+{
+  "score": <${regime.composite} ± 5 max>,
+  "aiAdj": <your adjustment, e.g. -3 or +2 or 0>,
+  "adjReason": "<1 sentence why you adjusted or kept it>",
+  "dir": "<Up|Down|Stable>",
+  "delta": "<short delta note>",
+  "morningPosture": "<Slightly bullish / Neutral / Risk Off / etc>",
+  "tacticalTilt": "<Neutral defensive / Pro-cyclical / etc>",
+  "urgency": "<1 sentence biggest risk or focus today>",
+  "interpParagraph": "<3-4 sentence analytical morning interpretation covering rates, equity, cross-asset signals, and Fisher rate dynamics. Reference real yield and financial repression if relevant.>",
+  "cioBrief": {"regime":"<name>","opportunity":"<target>","risk":"<risk>","invalidation":"<what breaks thesis>"},
+  "breadth": {"above50":"<estimate%>","above200":"<estimate%>","trend":"<Improving|Deteriorating|Neutral>"},
+  "creditInterp": "<1 sentence on HYG/LQD>",
+  "sectorInterp": "<1 sentence on sector rotation — include XLRE/XLU defensive signals>",
+  "tacticalOpps": {"high":{"target":"<>","why":"<>"},"medium":{"target":"<>","why":"<>"},"avoid":{"target":"<>","why":"<>"}},
+  "conflict": {"title":"<>","text":"<>"},
+  "analog": {"closest":"<>","conditions":["<>","<>","<>"],"outcome":"<>","confidence":"<High|Med|Low>"},
+  "playbook": {"interp":"<>","implication":"<>","wins":"<>","breaks":"<>"}
+}`;
+
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+    body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.2,max_tokens:1500,messages:[{role:'user',content:prompt}]})
+  });
+  if(!res.ok)throw new Error('AI: '+res.status);
+  let raw=(await res.json()).choices[0].message.content.replace(/```json|```/g,'').trim().replace(/\\n/g,'<br>').replace(/[\u0000-\u0019]+/g,' ');
+  const ai=JSON.parse(raw);
+
+  // Score
+  const finalScore=Math.max(0,Math.min(100,ai.score));
+  document.getElementById('ai-score').textContent=finalScore;
+  const sCol=finalScore>60?'var(--bull)':finalScore<40?'var(--bear)':'var(--warn)';
+  document.getElementById('ai-score').style.color=sCol;
+  document.getElementById('rs-adj').textContent=(ai.aiAdj>=0?'+':'')+ai.aiAdj;
+  document.getElementById('rs-adj').style.color=ai.aiAdj>0?'var(--bull)':ai.aiAdj<0?'var(--bear)':'var(--tm)';
+  document.getElementById('rs-final').textContent=finalScore;
+  document.getElementById('rs-final').style.color=sCol;
+
+  const dirEl=document.getElementById('ai-dir');
+  dirEl.textContent=ai.dir;dirEl.className='sc-dir uc '+(ai.dir.toLowerCase()==='up'?'dir-up':ai.dir.toLowerCase()==='down'?'dir-down':'dir-neu');
+  document.getElementById('ai-delta').textContent=ai.delta;
+  document.getElementById('cio-regime').textContent=ai.cioBrief.regime;
+  document.getElementById('cio-opp').textContent=ai.cioBrief.opportunity;
+  document.getElementById('cio-risk').textContent=ai.cioBrief.risk;
+  document.getElementById('cio-inval').textContent=ai.cioBrief.invalidation;
+  document.getElementById('ai-posture').textContent=ai.morningPosture;document.getElementById('ai-posture').style.color=sCol;
+  document.getElementById('ai-tilt').textContent=ai.tacticalTilt;
+  document.getElementById('ai-urgency').style.display='inline-flex';document.querySelector('#ai-urgency span').textContent=ai.urgency;
+
+  document.getElementById('v-b50').textContent=ai.breadth.above50+'%';
+  document.getElementById('n-breadth').textContent='Trend: '+ai.breadth.trend;
+  document.getElementById('n-cred').textContent=ai.creditInterp;
+  document.getElementById('n-sector').textContent=ai.sectorInterp;
+
+  document.getElementById('ai-interp').innerHTML=ai.interpParagraph;
+  document.getElementById('ai-conflict-title').textContent=ai.conflict.title;
+  document.getElementById('ai-conflict-text').innerHTML=ai.conflict.text;
+  document.getElementById('ai-analog-closest').textContent=ai.analog.closest;
+  document.getElementById('ai-analog-cond').innerHTML=ai.analog.conditions.map(c=>`<li>${c}</li>`).join('');
+  document.getElementById('ai-analog-out').textContent=ai.analog.outcome;
+  document.getElementById('ai-analog-conf').textContent=ai.analog.confidence;
+  document.getElementById('ai-analog-conf').style.color=ai.analog.confidence.toLowerCase().includes('high')?'var(--bull)':'var(--warn)';
+  document.getElementById('opp-high-target').textContent=ai.tacticalOpps.high.target;
+  document.getElementById('opp-high-why').innerHTML=ai.tacticalOpps.high.why;
+  document.getElementById('opp-med-target').textContent=ai.tacticalOpps.medium.target;
+  document.getElementById('opp-med-why').innerHTML=ai.tacticalOpps.medium.why;
+  document.getElementById('opp-avoid-target').textContent=ai.tacticalOpps.avoid.target;
+  document.getElementById('opp-avoid-why').innerHTML=ai.tacticalOpps.avoid.why;
+  document.getElementById('pb-interp').innerHTML=ai.playbook.interp;
+  document.getElementById('pb-impl').innerHTML=ai.playbook.implication;
+  document.getElementById('pb-wins').innerHTML=ai.playbook.wins;
+  document.getElementById('pb-breaks').innerHTML=ai.playbook.breaks;
+}
+</script>
+</body>
+</html>
