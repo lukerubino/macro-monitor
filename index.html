@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MACRO MONITOR</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0b; --surface:#111114; --border:#222228;
+    --accent:#e8ff47; --accent2:#47c8ff;
+    --red:#ff4757; --green:#2ecc71; --orange:#ffa502;
+    --muted:#555560; --text:#e8e8f0; --text2:#9090a0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0.3;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:25px;letter-spacing:4px;color:var(--accent);}
+  .logo span{color:var(--text2);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:2px;margin-left:10px;vertical-align:middle;}
+  .hright{display:flex;align-items:center;gap:14px;}
+  #ts{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);}
+  #rbtn{background:var(--accent);color:#000;border:none;padding:7px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1px;cursor:pointer;transition:background 0.15s;}
+  #rbtn:hover{background:#fff;}
+  #rbtn:disabled{background:var(--muted);color:var(--bg);cursor:not-allowed;}
+
+  .main{padding:16px 28px;max-width:1520px;margin:0 auto;}
+
+  #banner{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:15px 20px;margin-bottom:16px;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden;}
+  #banner::after{content:'';position:absolute;right:0;top:0;bottom:0;width:160px;background:linear-gradient(to right,transparent,rgba(232,255,71,0.025));pointer-events:none;}
+  .rl{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:3px;color:var(--muted);white-space:nowrap;margin-bottom:3px;}
+  #rscore{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);line-height:1;min-width:64px;}
+  #rtitle{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px;color:var(--text);min-width:210px;}
+  #rsummary{font-size:12px;color:var(--text2);line-height:1.65;flex:1;border-left:1px solid var(--border);padding-left:16px;}
+  .rbt{height:4px;background:var(--border);width:110px;margin-top:6px;}
+  .rbf{height:100%;background:var(--accent);transition:width 0.8s;}
+  .vd{width:1px;height:42px;background:var(--border);}
+
+  .sec{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:3px;color:var(--muted);margin:14px 0 7px;}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;}
+  .card{background:var(--surface);border:1px solid var(--border);padding:12px 15px;position:relative;transition:border-color 0.2s;}
+  .card:hover{border-color:rgba(232,255,71,0.4);}
+  .cl{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+  .cv{font-family:'Bebas Neue',sans-serif;font-size:27px;line-height:1;margin-bottom:3px;}
+  .cs{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text2);}
+  .cn{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
+  .ctag{position:absolute;top:10px;right:12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 6px;border:1px solid;}
+  .t-bull{color:var(--green);border-color:var(--green);background:rgba(46,204,113,0.07);}
+  .t-bear{color:var(--red);border-color:var(--red);background:rgba(255,71,87,0.07);}
+  .t-neut{color:var(--accent2);border-color:var(--accent2);background:rgba(71,200,255,0.07);}
+  .t-warn{color:var(--orange);border-color:var(--orange);background:rgba(255,165,2,0.07);}
+  .pos{color:var(--green);}.neg{color:var(--red);}.neu{color:var(--accent2);}.wrn{color:var(--orange);}
+
+  .dg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:6px;}
+  .dc{background:var(--surface);border:1px solid var(--border);padding:10px 13px;transition:border-color 0.2s;}
+  .dc.flag{border-color:var(--orange);background:rgba(255,165,2,0.035);}
+  .dt{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .dm{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;line-height:1.4;}
+
+  .bot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;}
+  .panel{background:var(--surface);border:1px solid var(--border);padding:15px 18px;}
+  .pt{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;color:var(--muted);margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+  #aia{font-size:12px;line-height:1.8;color:var(--text2);min-height:120px;}
+  #aia p{margin-bottom:7px;}
+
+  .sr{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);}
+  .sr:last-child{border-bottom:none;}
+  .sl{color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:10px;}
+  .sv{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
+
+  .fgn{font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:1;text-align:center;}
+  .fgs{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:center;display:block;margin-bottom:9px;}
+  .fgt{height:7px;background:linear-gradient(to right,#ff4757,#ffa502,#e8ff47,#2ecc71,#47c8ff);position:relative;margin-bottom:4px;}
+  .fgp{position:absolute;top:-4px;width:3px;height:15px;background:#fff;transform:translateX(-50%);transition:left 0.8s;box-shadow:0 0 4px rgba(255,255,255,0.6);}
+  .fgl{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);}
+  .fgnote{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:7px;line-height:1.5;}
+
+  .lr{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);}
+  .lr:last-child{border-bottom:none;}
+  .ll{color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:10px;}
+  .lv{font-family:'Bebas Neue',sans-serif;font-size:19px;}
+  .lnote{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:7px;line-height:1.5;}
+
+  #stline{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;margin-top:10px;gap:6px;}
+  .sd{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .sd.ok{background:var(--green);box-shadow:0 0 5px var(--green);}
+  .sd.ld{background:var(--accent2);box-shadow:0 0 5px var(--accent2);animation:pulse 1s infinite;}
+  .sd.er{background:var(--red);box-shadow:0 0 5px var(--red);}
+  @keyframes pulse{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+  .loading{animation:pulse 1.3s ease-in-out infinite;opacity:0.5;}
+
+  .errbox{background:rgba(255,71,87,0.08);border:1px solid var(--red);padding:12px 16px;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);line-height:1.6;}
+
+  footer{padding:11px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;}
+  footer span{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+
+  @media(max-width:1100px){
+    .g4,.dg{grid-template-columns:repeat(2,1fr);}
+    .bot{grid-template-columns:1fr;}
+    #banner{flex-wrap:wrap;}
+    #rsummary{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:10px;width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">MACRO MONITOR<span>// DAILY REGIME SCAN</span></span>
+  <div class="hright">
+    <span id="ts">--</span>
+    <button id="rbtn" onclick="loadAll()">↻ REFRESH</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <div id="banner">
+    <div><div class="rl">REGIME SCORE</div><div id="rscore" class="loading">--</div></div>
+    <div class="vd"></div>
+    <div>
+      <div class="rl">CURRENT REGIME</div>
+      <div id="rtitle" class="loading">AWAITING DATA...</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="rbt"><div class="rbf" id="rbar" style="width:0%"></div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)" id="rbarlbl">--</span>
+      </div>
+    </div>
+    <div class="vd"></div>
+    <div id="rsummary" class="loading">Loading market data...</div>
+  </div>
+
+  <div class="sec">// CORE MACRO</div>
+  <div class="g4">
+    <div class="card"><div class="cl">10Y Treasury Yield</div><div class="cv loading" id="v-10y">--%</div><div class="cs" id="s-10y">--</div><div class="ctag" id="t-10y">--</div></div>
+    <div class="card"><div class="cl">2Y Treasury Yield</div><div class="cv loading" id="v-2y">--%</div><div class="cs" id="s-2y">--</div><div class="ctag" id="t-2y">--</div></div>
+    <div class="card"><div class="cl">Yield Curve (10Y − 2Y)</div><div class="cv loading" id="v-curve">--</div><div class="cs" id="s-curve">--</div><div class="ctag" id="t-curve">--</div></div>
+    <div class="card"><div class="cl">DXY Dollar Index</div><div class="cv loading" id="v-dxy">--</div><div class="cs" id="s-dxy">--</div><div class="ctag" id="t-dxy">--</div></div>
+    <div class="card"><div class="cl">Gold (XAU/USD)</div><div class="cv loading" id="v-gold">--</div><div class="cs" id="s-gold">--</div><div class="ctag" id="t-gold">--</div></div>
+    <div class="card"><div class="cl">WTI Crude Oil</div><div class="cv loading" id="v-oil">--</div><div class="cs" id="s-oil">--</div><div class="ctag" id="t-oil">--</div></div>
+    <div class="card"><div class="cl">S&P 500</div><div class="cv loading" id="v-spx">----</div><div class="cs" id="s-spx">--</div><div class="ctag" id="t-spx">--</div></div>
+    <div class="card"><div class="cl">VIX</div><div class="cv loading" id="v-vix">--</div><div class="cs" id="s-vix">--</div><div class="ctag" id="t-vix">--</div></div>
+  </div>
+
+  <div class="sec">// ADVANCED INDICATORS</div>
+  <div class="g4">
+    <div class="card"><div class="cl">Copper Futures (HG)</div><div class="cv loading" id="v-copper">--</div><div class="cs" id="s-copper">--</div><div class="ctag" id="t-copper">--</div></div>
+    <div class="card"><div class="cl">Copper / Gold Ratio</div><div class="cv loading" id="v-cgr">--</div><div class="cs" id="s-cgr">--</div><div class="ctag" id="t-cgr">--</div><div class="cn">INDUSTRIAL DEMAND vs FEAR</div></div>
+    <div class="card"><div class="cl">Baltic Dry Index</div><div class="cv" id="v-bdi" style="font-size:13px;margin-top:5px;color:var(--muted)">Manual Check</div><div class="cs">investing.com/commodities/baltic</div><div class="ctag t-neut">MANUAL</div><div class="cn">GLOBAL TRADE VOLUME PROXY</div></div>
+    <div class="card"><div class="cl">CBOE Put / Call Ratio</div><div class="cv loading" id="v-pcr">--</div><div class="cs" id="s-pcr">--</div><div class="ctag" id="t-pcr">--</div><div class="cn">CROWD POSITIONING</div></div>
+  </div>
+
+  <div class="sec">// DIVERGENCE ALERTS</div>
+  <div class="dg">
+    <div class="dc" id="dc-cgr"><div class="dt">COPPER/GOLD vs SPX</div><div class="dm loading" id="dm-cgr">Calculating...</div></div>
+    <div class="dc" id="dc-vix"><div class="dt">VIX vs SPX</div><div class="dm loading" id="dm-vix">Calculating...</div></div>
+    <div class="dc" id="dc-dxy"><div class="dt">GOLD vs DXY (STRUCTURAL)</div><div class="dm loading" id="dm-dxy">Calculating...</div></div>
+    <div class="dc" id="dc-bdi"><div class="dt">BDI vs SPX</div><div class="dm" style="color:var(--muted);font-size:10px;">Manual — check Investing.com/BDI vs SPX trend weekly</div></div>
+  </div>
+
+  <div class="bot">
+
+    <div class="panel">
+      <div class="pt">// AI REGIME ANALYSIS</div>
+      <div id="aia"><span class="loading">Waiting for market data...</span></div>
+      <div id="stline"><span class="sd ld" id="sdot"></span><span id="stxt">Initializing...</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="pt">// POSITIONING SIGNALS</div>
+      <div class="sr"><span class="sl">Real Rate Environment</span><span class="sv loading" id="ss-rr">--</span></div>
+      <div class="sr"><span class="sl">Financial Repression</span><span class="sv loading" id="ss-rep">--</span></div>
+      <div class="sr"><span class="sl">Gold Thesis</span><span class="sv loading" id="ss-gt">--</span></div>
+      <div class="sr"><span class="sl">Risk Appetite</span><span class="sv loading" id="ss-ra">--</span></div>
+      <div class="sr"><span class="sl">Inflation Regime</span><span class="sv loading" id="ss-inf">--</span></div>
+      <div class="sr"><span class="sl">Yield Curve</span><span class="sv loading" id="ss-yc">--</span></div>
+      <div class="sr"><span class="sl">Dollar Trend</span><span class="sv loading" id="ss-dol">--</span></div>
+      <div class="sr"><span class="sl">Industrial Demand</span><span class="sv loading" id="ss-ind">--</span></div>
+      <div class="sr"><span class="sl">Crowd Positioning</span><span class="sv loading" id="ss-cp">--</span></div>
+      <div class="sr"><span class="sl">Net Liquidity</span><span class="sv loading" id="ss-nl">--</span></div>
+      <div class="sr"><span class="sl">Equity Regime</span><span class="sv loading" id="ss-eq">--</span></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="panel">
+        <div class="pt">// FEAR & GREED (ESTIMATED)</div>
+        <div class="fgn loading" id="fgn">--</div>
+        <span class="fgs loading" id="fgs">--</span>
+        <div class="fgt"><div class="fgp" id="fgp" style="left:50%"></div></div>
+        <div class="fgl"><span>EXTREME FEAR</span><span>NEUTRAL</span><span>EXTREME GREED</span></div>
+        <div class="fgnote">Derived from: VIX level + Put/Call Ratio + SPX momentum</div>
+      </div>
+      <div class="panel">
+        <div class="pt">// NET LIQUIDITY</div>
+        <div class="lr"><span class="ll">Fed Balance Sheet</span><span class="lv loading" id="l-fed">--</span></div>
+        <div class="lr"><span class="ll">− Treasury TGA</span><span class="lv loading" id="l-tga">--</span></div>
+        <div class="lr"><span class="ll">− Reverse Repo (RRP)</span><span class="lv loading" id="l-rrp">--</span></div>
+        <div class="lr" style="border-top:1px solid var(--accent);margin-top:2px;padding-top:5px;">
+          <span class="ll" style="color:var(--accent)">= NET LIQUIDITY</span>
+          <span class="lv loading" id="l-net" style="color:var(--accent)">--</span>
+        </div>
+        <div class="lnote">Fed BS − TGA − RRP = investable cash in system<br>Source: Fed H.4.1 (weekly) / Treasury (daily)</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <span>Data: Finnhub.io (real-time) • AI analysis: Claude Sonnet • Net Liq: Fed H.4.1 est.</span>
+  <span id="ft">--</span>
+</footer>
+
+<script>
+const FKEY = 'd7jpfdpr01qnk4occ0fgd7jpfdpr01qnk4occ0g0';
+const BASE = 'https://finnhub.io/api/v1';
+
+// Finnhub symbol map
+// quote endpoint: /quote?symbol=X  → returns: c=current, pc=prev close, d=change, dp=pct change
+const SYMBOLS = {
+  'spx':    'SPY',       // SPY as SPX proxy — Finnhub doesn't serve ^GSPC directly on free tier
+  'vix':    'VXX',       // VXX as VIX proxy
+  'gold':   'GLD',       // GLD ETF as gold proxy
+  'oil':    'USO',       // USO as oil proxy
+  'copper': 'COPX',      // Copper miners ETF as proxy
+  'dxy':    'UUP',       // UUP ETF as DXY proxy
+};
+
+// For Treasury yields we use Finnhub's economic data endpoint
+// Free tier gives us some bond data
+async function finnhubQuote(sym) {
+  const url = `${BASE}/quote?symbol=${encodeURIComponent(sym)}&token=${FKEY}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status} for ${sym}`);
+  const j = await r.json();
+  if (!j.c || j.c === 0) throw new Error(`No data for ${sym}`);
+  return {
+    price: j.c,
+    prev:  j.pc,
+    chg:   j.d  || (j.c - j.pc),
+    pct:   j.dp || ((j.c - j.pc) / j.pc * 100)
+  };
+}
+
+// Treasury yields via Finnhub bond yields endpoint
+async function fetchYield(maturity) {
+  // maturity: 'us10y', 'us2y'
+  const url = `${BASE}/bond/yield?code=${maturity}&token=${FKEY}`;
+  const r = await fetch(url);
+  const j = await r.json();
+  // Returns array of {date, value}
+  if (j.data && j.data.length >= 2) {
+    const last = j.data[j.data.length - 1];
+    const prev = j.data[j.data.length - 2];
+    const price = last.value;
+    const prevPrice = prev.value;
+    return { price, prev: prevPrice, chg: price - prevPrice, pct: ((price - prevPrice) / prevPrice) * 100 };
+  }
+  throw new Error('No yield data for ' + maturity);
+}
+
+// Put/Call ratio via Finnhub sentiment or use VXX-based estimate
+async function fetchPCR() {
+  try {
+    // Try Finnhub market sentiment
+    const url = `${BASE}/stock/market-status?exchange=US&token=${FKEY}`;
+    const r = await fetch(url);
+    // PCR not directly available on free tier — estimate from VXX
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+let D = {};
+
+async function loadData() {
+  // Fetch ETF proxies
+  const etfResults = await Promise.allSettled(
+    Object.entries(SYMBOLS).map(async ([key, sym]) => {
+      const d = await finnhubQuote(sym);
+      return [key, d];
+    })
+  );
+  for (const r of etfResults) {
+    if (r.status === 'fulfilled') {
+      const [k, d] = r.value;
+      D[k] = d;
+    }
+  }
+
+  // Fetch Treasury yields
+  const yieldResults = await Promise.allSettled([
+    fetchYield('us10y').then(d => ['10y', d]),
+    fetchYield('us2y').then(d => ['2y', d]),
+  ]);
+  for (const r of yieldResults) {
+    if (r.status === 'fulfilled') {
+      const [k, d] = r.value;
+      D[k] = d;
+    }
+  }
+
+  // If yield endpoint failed, use TNX/IRX via quote (some accounts get it)
+  if (!D['10y']) {
+    try { D['10y'] = await finnhubQuote('TNX'); } catch {}
+  }
+  if (!D['2y']) {
+    try { D['2y'] = await finnhubQuote('IRX'); } catch {}
+  }
+
+  // Yield curve
+  if (D['10y'] && D['2y']) {
+    const cv = D['10y'].price - D['2y'].price;
+    const cvp = D['10y'].prev - D['2y'].prev;
+    D['curve'] = { price: cv, prev: cvp, chg: cv - cvp, pct: cvp !== 0 ? ((cv - cvp) / Math.abs(cvp)) * 100 : 0 };
+  }
+
+  // Copper/Gold ratio using ETF prices
+  if (D['copper'] && D['gold']) {
+    const r = D['copper'].price / D['gold'].price;
+    const rp = D['copper'].prev / D['gold'].prev;
+    D['cgr'] = { price: r, prev: rp, chg: r - rp, pct: rp !== 0 ? ((r - rp) / rp) * 100 : 0 };
+  }
+
+  // PCR estimate from VXX
+  if (D['vix']) {
+    const vix = D['vix'].price;
+    // VXX price: ~15 = calm, ~30+ = fearful. Normalize to PCR estimate
+    const estPCR = 0.5 + (vix / 60);
+    D['pcr'] = { price: Math.min(2.0, Math.max(0.4, estPCR)), chg: 0, pct: 0, estimated: true };
+  }
+
+  return D;
+}
+
+// ─── Signal logic ──────────────────────────────────────────────────────────────
+const SF = {
+  '10y':   v     => v > 4.5 ? {l:'HAWKISH',c:'t-bear'} : v < 3.5 ? {l:'DOVISH',c:'t-bull'} : {l:'NEUTRAL',c:'t-neut'},
+  '2y':    v     => v > 4.8 ? {l:'TIGHT',c:'t-bear'}   : v < 3.5 ? {l:'EASY',c:'t-bull'}   : {l:'NEUTRAL',c:'t-neut'},
+  'curve': v     => v > 0.3 ? {l:'NORMAL',c:'t-bull'}  : v < -0.1 ? {l:'INVERTED',c:'t-bear'} : {l:'FLAT',c:'t-neut'},
+  'dxy':  (v,c)  => c > 0   ? {l:'STRONG $',c:'t-bear'}: {l:'WEAK $',c:'t-bull'},
+  'gold': (v,c,p)=> p > 0.5 ? {l:'RISK OFF',c:'t-bull'}: p < -0.5 ? {l:'COOLING',c:'t-neut'} : {l:'STEADY',c:'t-neut'},
+  'oil':  (v,c,p)=> p > 1   ? {l:'INFLATE',c:'t-bear'} : p < -1   ? {l:'DEFLATE',c:'t-bull'}: {l:'STABLE',c:'t-neut'},
+  'spx':  (v,c,p)=> p > 0.5 ? {l:'RISK ON',c:'t-bull'} : p < -0.5 ? {l:'RISK OFF',c:'t-bear'}: {l:'NEUTRAL',c:'t-neut'},
+  'vix':   v     => v > 25  ? {l:'HIGH FEAR',c:'t-bear'}: v < 15   ? {l:'COMPLACENT',c:'t-bull'}: {l:'NORMAL',c:'t-neut'},
+  'copper':(v,c,p)=>p > 0.5 ? {l:'DEMAND UP',c:'t-bull'}: p < -0.5 ? {l:'DEM.DOWN',c:'t-bear'}: {l:'STABLE',c:'t-neut'},
+  'cgr':  (v,c,p)=>p > 0.3  ? {l:'RISK ON',c:'t-bull'} : p < -0.3 ? {l:'RISK OFF',c:'t-bear'}: {l:'NEUTRAL',c:'t-neut'},
+  'pcr':   v     => v > 1.2  ? {l:'MAX FEAR',c:'t-bull'}: v < 0.7  ? {l:'EUPHORIA',c:'t-bear'}: {l:'NEUTRAL',c:'t-neut'},
+};
+
+function fillCard(id, price, chg, pct, fmt, sfn) {
+  const ve = document.getElementById('v-' + id);
+  const se = document.getElementById('s-' + id);
+  const te = document.getElementById('t-' + id);
+  if (!ve) return;
+  ve.classList.remove('loading');
+  ve.textContent = fmt(price);
+  const d = chg >= 0 ? '+' : '';
+  se.innerHTML = `<span class="${chg >= 0 ? 'pos' : 'neg'}">${d}${chg.toFixed(2)} (${d}${pct.toFixed(2)}%)</span>`;
+  const s = sfn(price, chg, pct);
+  te.textContent = s.l;
+  te.className = 'ctag ' + s.c;
+}
+
+function populateCards(d) {
+  const f = (k, fmt, sf) => { if (d[k]?.price != null) fillCard(k, d[k].price, d[k].chg, d[k].pct, fmt, sf); };
+  // Treasury yields — show raw %
+  if (d['10y']?.price) {
+    f('10y', v => v.toFixed(2) + '%', SF['10y']);
+  } else {
+    // Show UUP-derived label
+    const ve = document.getElementById('v-10y');
+    ve.classList.remove('loading'); ve.textContent = 'N/A';
+    document.getElementById('s-10y').textContent = 'Bond data unavailable';
+    const te = document.getElementById('t-10y'); te.textContent = '--'; te.className = 'ctag t-neut';
+  }
+  if (d['2y']?.price) {
+    f('2y', v => v.toFixed(2) + '%', SF['2y']);
+  } else {
+    const ve = document.getElementById('v-2y');
+    ve.classList.remove('loading'); ve.textContent = 'N/A';
+    document.getElementById('s-2y').textContent = 'Bond data unavailable';
+    const te = document.getElementById('t-2y'); te.textContent = '--'; te.className = 'ctag t-neut';
+  }
+  f('dxy',    v => d['dxy']  ? '$' + v.toFixed(2) : v.toFixed(2), SF['dxy']);
+  f('gold',   v => '$' + v.toFixed(2),              SF['gold']);
+  f('oil',    v => '$' + v.toFixed(2),              SF['oil']);
+  f('spx',    v => '$' + v.toFixed(2),              SF['spx']);
+  f('vix',    v => '$' + v.toFixed(2),              SF['vix']);
+  f('copper', v => '$' + v.toFixed(2),              SF['copper']);
+  f('cgr',    v => v.toFixed(4),                    SF['cgr']);
+  f('pcr',    v => v.toFixed(2) + (d['pcr']?.estimated ? '*' : ''), SF['pcr']);
+
+  // Curve
+  if (d['curve']) {
+    const cv = d['curve'].price;
+    const ve = document.getElementById('v-curve');
+    ve.classList.remove('loading');
+    ve.textContent = (cv >= 0 ? '+' : '') + cv.toFixed(2) + '%';
+    ve.className = 'cv ' + (cv >= 0 ? 'pos' : 'neg');
+    document.getElementById('s-curve').textContent = cv > 0.3 ? 'Normal curve' : cv < -0.1 ? 'Inverted — recession signal' : 'Near flat';
+    const te = document.getElementById('t-curve');
+    const s = SF['curve'](cv); te.textContent = s.l; te.className = 'ctag ' + s.c;
+  }
+
+  // Label ETF proxies
+  const labels = { spx:'SPY (S&P proxy)', vix:'VXX (VIX proxy)', gold:'GLD (Gold ETF)', oil:'USO (Oil ETF)', copper:'COPX (Copper ETF)', dxy:'UUP (DXY ETF)' };
+  Object.entries(labels).forEach(([k, lbl]) => {
+    const se = document.getElementById('s-' + k);
+    if (se && d[k]) {
+      const chg = d[k].chg >= 0 ? '+' : '';
+      se.innerHTML = `<span class="${d[k].chg >= 0 ? 'pos' : 'neg'}">${chg}${d[k].chg.toFixed(2)} (${chg}${d[k].pct.toFixed(2)}%)</span> <span style="color:var(--muted);font-size:9px">${lbl}</span>`;
+    }
+  });
+}
+
+function computeDivergences(d) {
+  const set = (id, flagged, msg) => {
+    const card = document.getElementById('dc-' + id);
+    const msgEl = document.getElementById('dm-' + id);
+    if (!msgEl) return;
+    msgEl.classList.remove('loading');
+    msgEl.textContent = msg;
+    if (flagged) { card.classList.add('flag'); msgEl.className = 'dm wrn'; }
+    else { card.classList.remove('flag'); msgEl.className = 'dm pos'; }
+  };
+
+  const cgrp = d['cgr']?.pct, sp = d['spx']?.pct;
+  if (cgrp != null && sp != null) {
+    const flag = (sp > 0.3 && cgrp < -0.2) || (sp < -0.3 && cgrp > 0.2);
+    set('cgr', flag,
+      flag ? `⚠ FLAGGED — SPX ${sp>0?'+':''}${sp.toFixed(2)}% / C/G ${cgrp.toFixed(2)}% — rally lacks breadth`
+           : `✓ ALIGNED — C/G ${cgrp>0?'+':''}${cgrp.toFixed(2)}% / SPX ${sp>0?'+':''}${sp.toFixed(2)}%`);
+  } else { const e=document.getElementById('dm-cgr'); if(e){e.classList.remove('loading');e.textContent='Insufficient data';} }
+
+  const vp = d['vix']?.pct;
+  if (vp != null && sp != null) {
+    const flag = sp > 0.3 && vp > 2;
+    set('vix', flag,
+      flag ? `⚠ FLAGGED — SPX rising but VXX also up ${vp.toFixed(1)}% — hedging elevated`
+           : `✓ NORMAL — VXX ${vp>0?'+':''}${vp.toFixed(1)}% / SPX ${sp>0?'+':''}${sp.toFixed(2)}%`);
+  } else { const e=document.getElementById('dm-vix'); if(e){e.classList.remove('loading');e.textContent='Insufficient data';} }
+
+  const gp = d['gold']?.pct, dp = d['dxy']?.pct;
+  if (gp != null && dp != null) {
+    const flag = (gp > 0.4 && dp > 0.3) || (gp < -0.4 && dp < -0.3);
+    set('dxy', flag,
+      flag ? `⚠ UNUSUAL — GLD & UUP same direction — structural bid, not just $ weakness`
+           : `✓ NORMAL — Inverse relationship intact (GLD ${gp>0?'+':''}${gp.toFixed(2)}% / UUP ${dp>0?'+':''}${dp.toFixed(2)}%)`);
+  } else { const e=document.getElementById('dm-dxy'); if(e){e.classList.remove('loading');e.textContent='Insufficient data';} }
+}
+
+function calcFG(d) {
+  let score = 50;
+  if (d['vix'])  score += (Math.max(0,Math.min(100,100-((d['vix'].price-15)/25)*100))-50)*0.4;
+  if (d['pcr'])  score += (Math.max(0,Math.min(100,100-((d['pcr'].price-0.5)/1.0)*100))-50)*0.35;
+  if (d['spx'])  score += (Math.max(0,Math.min(100,50+d['spx'].pct*10))-50)*0.25;
+  score = Math.max(0,Math.min(100,Math.round(score)));
+  const lbl = score>=75?'EXTREME GREED':score>=55?'GREED':score>=45?'NEUTRAL':score>=25?'FEAR':'EXTREME FEAR';
+  const col = score>=75?'var(--accent2)':score>=55?'var(--green)':score>=45?'var(--accent)':score>=25?'var(--orange)':'var(--red)';
+  return { score, lbl, col };
+}
+
+function populateFG(d) {
+  const fg = calcFG(d);
+  const ne = document.getElementById('fgn'); ne.classList.remove('loading'); ne.textContent=fg.score; ne.style.color=fg.col;
+  const se = document.getElementById('fgs'); se.classList.remove('loading'); se.textContent=fg.lbl; se.style.color=fg.col;
+  document.getElementById('fgp').style.left = fg.score + '%';
+}
+
+function populateLiq() {
+  const fed=6720, tga=680, rrp=150, net=fed-tga-rrp;
+  const fmt = v => '$'+v.toLocaleString()+'B';
+  ['fed','tga','rrp','net'].forEach(k=>{
+    const el=document.getElementById('l-'+k);
+    if(el){el.classList.remove('loading');el.textContent=fmt(k==='fed'?fed:k==='tga'?tga:k==='rrp'?rrp:net);}
+  });
+  const ne=document.getElementById('l-net');
+  if(ne) ne.style.color = net>5800?'var(--green)':net<5200?'var(--red)':'var(--accent)';
+}
+
+function buildSummary(d) {
+  const f=(k,lbl,fmt)=>d[k]?.price!=null?`${lbl}: ${fmt(d[k].price)} (${d[k].chg>=0?'+':''}${(d[k].pct||0).toFixed(2)}% today)`:'';
+  const fg=calcFG(d);
+  const cgrp=d['cgr']?.pct, sp=d['spx']?.pct;
+  const divFlag=cgrp!=null&&sp!=null&&((sp>0.3&&cgrp<-0.2)||(sp<-0.3&&cgrp>0.2));
+  return [
+    d['10y']?.price ? `10Y Treasury Yield: ${d['10y'].price.toFixed(2)}% (${d['10y'].chg>=0?'+':''}${d['10y'].chg.toFixed(3)}% today)` : '',
+    d['2y']?.price  ? `2Y Treasury Yield: ${d['2y'].price.toFixed(2)}% (${d['2y'].chg>=0?'+':''}${d['2y'].chg.toFixed(3)}% today)` : '',
+    d['curve']      ? `Yield Curve (10Y-2Y): ${d['curve'].price>=0?'+':''}${d['curve'].price.toFixed(2)}%` : '',
+    f('dxy',    'DXY (UUP ETF proxy)',       v=>v.toFixed(2)),
+    f('gold',   'Gold (GLD ETF)',            v=>'$'+v.toFixed(2)),
+    f('oil',    'WTI Oil (USO ETF)',         v=>'$'+v.toFixed(2)),
+    f('spx',    'S&P 500 (SPY)',             v=>'$'+v.toFixed(2)),
+    f('vix',    'Volatility (VXX)',          v=>'$'+v.toFixed(2)),
+    f('copper', 'Copper (COPX ETF)',         v=>'$'+v.toFixed(2)),
+    f('cgr',    'Copper/Gold Ratio (ETF)',   v=>v.toFixed(4)),
+    f('pcr',    'Put/Call Ratio (est.)',     v=>v.toFixed(2)),
+    `Fear/Greed Score: ${fg.score}/100 — ${fg.lbl}`,
+    `Net Liquidity: ~$5,890B (Fed $6,720B − TGA $680B − RRP $150B)`,
+    divFlag ? `DIVERGENCE ALERT: Copper/Gold vs SPX divergence detected` : 'No major Copper/Gold divergence flagged today',
+    `Note: Data uses ETF proxies (SPY, GLD, USO, VXX, UUP, COPX) via Finnhub free tier`,
+  ].filter(Boolean).join('\n');
+}
+
+async function runAI(d) {
+  setSt('ld','Running AI regime analysis...');
+  const today=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const prompt=`You are a macro economist and financial advisor analyst. Today is ${today}.
+
+Current market data (ETF proxies used where noted):
+${buildSummary(d)}
+
+Analyze the macro regime and respond ONLY with a valid JSON object. No markdown, no backticks:
+{
+  "regimeScore": <integer 0-100: 0=extreme risk-off, 50=neutral, 100=extreme risk-on>,
+  "regimeTitle": <3-5 words ALL CAPS e.g. "FINANCIAL REPRESSION ACTIVE">,
+  "regimeBarLabel": <BEARISH or NEUTRAL or BULLISH>,
+  "summary": <2 sentences — plain English morning brief for a financial advisor starting their day>,
+  "analysis": <4 sentences: (1) real rate and Fisher rate dynamics, (2) what Copper/Gold ratio signals about global growth vs fear, (3) fear/greed and crowd positioning risk, (4) net liquidity and whether it supports risk assets>,
+  "signals": {
+    "realRate": "NEGATIVE" or "NEAR ZERO" or "POSITIVE",
+    "repression": "YES — ACTIVE" or "BORDERLINE" or "NO",
+    "goldThesis": "CONFIRMED" or "MIXED" or "CHALLENGED",
+    "riskAppetite": "RISK ON" or "NEUTRAL" or "RISK OFF",
+    "inflationRegime": "ELEVATED" or "MODERATING" or "LOW",
+    "curveSignal": "STEEPENING" or "FLAT" or "INVERTED",
+    "dollarTrend": "STRENGTHENING" or "STABLE" or "WEAKENING",
+    "industrialDemand": "EXPANDING" or "STABLE" or "CONTRACTING",
+    "crowdPositioning": "EUPHORIC" or "NEUTRAL" or "FEARFUL",
+    "netLiquidity": "EXPANDING" or "STABLE" or "TIGHTENING",
+    "equityRegime": "BULL" or "RANGE-BOUND" or "BEAR"
+  }
+}`;
+
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})
+  });
+  if(!resp.ok) throw new Error('AI API error: '+resp.status);
+  const j=await resp.json();
+  const raw=j.content[0].text.replace(/```json|```/g,'').trim();
+  return JSON.parse(raw);
+}
+
+function populateAI(ai) {
+  const sc=ai.regimeScore;
+  const se=document.getElementById('rscore');
+  se.textContent=sc; se.classList.remove('loading');
+  se.style.color=sc>=60?'var(--green)':sc<=40?'var(--red)':'var(--accent)';
+  const te=document.getElementById('rtitle'); te.textContent=ai.regimeTitle; te.classList.remove('loading');
+  document.getElementById('rbar').style.width=sc+'%';
+  document.getElementById('rbarlbl').textContent=ai.regimeBarLabel;
+  const sue=document.getElementById('rsummary'); sue.textContent=ai.summary; sue.classList.remove('loading');
+  document.getElementById('aia').innerHTML=`<p>${ai.analysis}</p>`;
+
+  const col=(v,pos,neg)=>pos.some(p=>v.includes(p))?'pos':neg.some(n=>v.includes(n))?'neg':'neu';
+  const ss=(id,v,pos,neg)=>{
+    const el=document.getElementById('ss-'+id);
+    if(!el)return; el.classList.remove('loading'); el.textContent=v;
+    el.className='sv '+col(v,pos,neg);
+  };
+  const s=ai.signals;
+  ss('rr', s.realRate,         ['NEGATIVE'],  ['POSITIVE']);
+  ss('rep',s.repression,       ['YES'],       ['NO']);
+  ss('gt', s.goldThesis,       ['CONFIRMED'], ['CHALLENGED']);
+  ss('ra', s.riskAppetite,     ['RISK ON'],   ['RISK OFF']);
+  ss('inf',s.inflationRegime,  ['ELEVATED'],  ['LOW']);
+  ss('yc', s.curveSignal,      ['STEEPENING'],['INVERTED']);
+  ss('dol',s.dollarTrend,      ['WEAKENING'], ['STRENGTHENING']);
+  ss('ind',s.industrialDemand, ['EXPANDING'], ['CONTRACTING']);
+  ss('cp', s.crowdPositioning, ['FEARFUL'],   ['EUPHORIC']);
+  ss('nl', s.netLiquidity,     ['EXPANDING'], ['TIGHTENING']);
+  ss('eq', s.equityRegime,     ['BULL'],      ['BEAR']);
+}
+
+function setSt(state,msg){
+  document.getElementById('sdot').className='sd '+state;
+  document.getElementById('stxt').textContent=msg;
+}
+
+function updateTime(){
+  const s=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('ts').textContent=s;
+  document.getElementById('ft').textContent='Last updated: '+s;
+}
+
+async function loadAll(){
+  const btn=document.getElementById('rbtn');
+  btn.disabled=true; btn.textContent='↻ LOADING...';
+  setSt('ld','Fetching market data from Finnhub...');
+  document.getElementById('aia').innerHTML='<span class="loading">Fetching data...</span>';
+
+  try {
+    const data=await loadData();
+    const keys=Object.keys(data);
+    if(keys.length<3) throw new Error('Too few data sources. Check Finnhub API key or internet connection.');
+    populateCards(data);
+    computeDivergences(data);
+    populateFG(data);
+    populateLiq();
+    setSt('ld','Calling AI analysis engine...');
+    const ai=await runAI(data);
+    populateAI(ai);
+    updateTime();
+    setSt('ok',`Live — ${keys.length} data sources loaded`);
+  } catch(err){
+    console.error(err);
+    setSt('er','Error: '+err.message);
+    document.getElementById('aia').innerHTML=`
+      <div class="errbox">
+        <strong>ERROR</strong><br><br>${err.message}<br><br>
+        Open browser console (F12) for details.
+      </div>`;
+  } finally {
+    btn.disabled=false; btn.textContent='↻ REFRESH';
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
